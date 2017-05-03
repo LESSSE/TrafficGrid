@@ -305,7 +305,7 @@ end
 to change-direction
   if intersection?
   [
-    set up-car? (not up-car?)
+    set up-car? (not upcar?)
     ifelse up-car?
     [ set heading 180 ]
     [ set heading 90 ]
