@@ -84,7 +84,7 @@ to setup
   create-turtles num-cars
   [
     setup-cars
-    set-car-color
+    set-initial-car-color
     record-data
     setObjective
   ]
@@ -200,7 +200,8 @@ to go
     fd speed
     record-data
     set-car-color
-
+    if test-objective
+    [set color  yellow]
   ]
 
   ;; update the phase and the global clock
@@ -355,6 +356,13 @@ to speed-up  ;; turtle procedure
   ifelse speed > speed-limit
   [ set speed speed-limit ]
   [ set speed speed + acceleration ]
+end
+
+;; set the color of the turtle to a different color based on how fast the turtle is moving
+to set-initial-car-color  ;; turtle procedure
+  ifelse speed < (speed-limit / 2)
+    [ set color blue ]
+    [ set color cyan - 2 ]
 end
 
 ;; set the color of the turtle to a different color based on how fast the turtle is moving
