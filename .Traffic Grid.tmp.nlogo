@@ -24,7 +24,7 @@ turtles-own
   speed     ;; the speed of the turtle
   up-car?   ;; true if the turtle moves downwards and false if it moves to the right
   wait-time ;; the amount of time since the last time a turtle has moved
-  bb
+  objective ;;
 ]
 
 patches-own
@@ -86,6 +86,7 @@ to setup
     setup-cars
     set-car-color
     record-data
+    setObjective
   ]
 
   ;; give the turtles an initial speed
@@ -151,7 +152,6 @@ end
 ;; Initialize the turtle variables to appropriate values and place the turtle on an empty road patch.
 to setup-cars  ;; turtle procedure
   set speed 0
-  set bb true
   set wait-time 0
   put-on-empty-road
   ifelse intersection?
@@ -195,13 +195,13 @@ to go
   ;; based on their speed
   ask turtles [
     set-car-speed
-
-    if bb
-    [
-      change-direction]
+    if random 2 = 0
+    [change-direction]
     fd speed
     record-data
-    set-car-color
+    set-initialcar-color
+    if test-objective
+    [set color  yellow]
   ]
 
   ;; update the phase and the global clock
@@ -310,8 +310,6 @@ end
 to change-direction
   if intersection?
   [
-
-    set pcolor grey
     set up-car? (not up-car?)
     ifelse up-car?
     [ move-to patch-here
@@ -361,10 +359,19 @@ to speed-up  ;; turtle procedure
 end
 
 ;; set the color of the turtle to a different color based on how fast the turtle is moving
-to set-car-color  ;; turtle procedure
+to set-initial-car-color  ;; turtle procedure
   ifelse speed < (speed-limit / 2)
-  [ set color blue ]
-  [ set color cyan - 2 ]
+    [ set color blue ]
+    [ set color cyan - 2 ]
+end
+
+;; set the color of the turtle to a different color based on how fast the turtle is moving
+to set-car-color  ;; turtle procedure
+  if  not (color = yellow)
+  [ifelse speed < (speed-limit / 2)
+    [ set color blue ]
+    [ set color cyan - 2 ]
+  ]
 end
 
 ;; keep track of the number of stopped turtles and the amount of time a turtle has been stopped
@@ -392,6 +399,19 @@ to next-phase
   set phase phase + 1
   if phase mod ticks-per-cycle = 0
     [ set phase 0 ]
+end
+
+to setObjective
+  set objective one-of roads
+  while [pxcor = [pxcor] of objective and pycor = [pycor] of objective]
+  [ set objective one-of roads ]
+end
+
+to-report test-objective
+  ifelse pxcor = [pxcor] of objective and pycor = [pycor] of objective
+  [ setObjective
+    report true]
+  [report false]
 end
 
 
@@ -629,7 +649,7 @@ num-cars
 num-cars
 1
 400
-145.0
+118.0
 1
 1
 NIL
