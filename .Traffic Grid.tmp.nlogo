@@ -25,6 +25,7 @@ turtles-own
   up-car?   ;; true if the turtle moves downwards and false if it moves to the right
   wait-time ;; the amount of time since the last time a turtle has moved
   objective ;;
+  next-cross
 ]
 
 patches-own
@@ -84,7 +85,7 @@ to setup
   create-turtles num-cars
   [
     setup-cars
-    set-car-color
+    set-initial-car-color
     record-data
     setObjective
   ]
@@ -199,9 +200,12 @@ to go
     [change-direction]
     fd speed
     record-data
-    set-initialcar-color
+    set-car-color
     if test-objective
     [set color  yellow]
+    if not ()
+    [set next-cross get-next-crossing
+      ask next-cross [set pcolor black]]
   ]
 
   ;; update the phase and the global clock
@@ -412,6 +416,57 @@ to-report test-objective
   [ setObjective
     report true]
   [report false]
+end
+
+;Things below are for negotiation
+
+
+to-report get-next-crossing
+  let c-x-cord  pxcor
+  let c-y-cord  pycor
+  ifelse up-car?
+  [let int-temp intersections with [pxcor = c-x-cord and pycor < c-y-cord]
+    ifelse count int-temp = 0
+    [report intersections with [pxcor = c-x-cord] with-max [pycor]]
+    [report int-temp with-max [pycor]]
+  ]
+  [let int-temp intersections with [pycor = c-y-cord and pxcor > c-x-cord]
+    ifelse count int-temp = 0
+    [report intersections with [pycor = c-y-cord] with-min [pxcor]]
+    [report int-temp with-min [pxcor]]
+  ]
+
+end
+
+
+;;;  Send a message to all cars
+;;;  Sends the next crossing patch, the car turtle with all info
+to send-message [msg crossing car]
+  ask turtles [new-message msg crossing car]
+end
+
+
+;;;
+;;;  Send a message to a specified car
+;;;  Sends the next crossing patch, the car turtle with all info
+to send-message-to-car [id-car msg crossing car]
+  ask turtle id-car [new-message msg crossing car]
+end
+
+;;;
+;;;  Handle a new received message
+;;;
+to new-message [msg crossing car]
+
+  if(msg = "grab")
+  [
+    ;set boxes-on-ramp (boxes-on-ramp - 1)
+  ]
+  if(msg = "drop")
+  [
+    ;set boxes-on-shelves (boxes-on-shelves + 1)
+  ]
+
 end
 
 
@@ -649,7 +704,7 @@ num-cars
 num-cars
 1
 400
-118.0
+1.0
 1
 1
 NIL
