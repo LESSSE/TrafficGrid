@@ -24,6 +24,7 @@ turtles-own
   speed     ;; the speed of the turtle
   up-car?   ;; true if the turtle moves downwards and false if it moves to the right
   wait-time ;; the amount of time since the last time a turtle has moved
+  bb
 ]
 
 patches-own
@@ -100,7 +101,6 @@ to setup-globals
   set num-cars-stopped 0
   set grid-x-inc world-width / grid-size-x
   set grid-y-inc world-height / grid-size-y
-
   ;; don't make acceleration 0.1 since we could get a rounding error and end up on a patch boundary
   set acceleration 0.099
 end
@@ -151,6 +151,7 @@ end
 ;; Initialize the turtle variables to appropriate values and place the turtle on an empty road patch.
 to setup-cars  ;; turtle procedure
   set speed 0
+  set bb true
   set wait-time 0
   put-on-empty-road
   ifelse intersection?
@@ -194,6 +195,10 @@ to go
   ;; based on their speed
   ask turtles [
     set-car-speed
+
+    if bb
+    [
+      change-direction]
     fd speed
     record-data
     set-car-color
@@ -307,8 +312,11 @@ to change-direction
   [
     set up-car? (not up-car?)
     ifelse up-car?
-    [ set heading 180 ]
-    [ set heading 90 ]
+    [ move-to patch-here
+      set heading 180
+    ]
+    [ move-to patch-here
+      set heading 90 ]
   ]
 
 end
