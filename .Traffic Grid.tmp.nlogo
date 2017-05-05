@@ -1,5 +1,6 @@
 globals
 [
+  counter                  ;; for ids
   grid-x-inc               ;; the amount of patches in between two roads in the x direction
   grid-y-inc               ;; the amount of patches in between two roads in the y direction
   acceleration             ;; the constant that controls how much a car speeds up or slows down by if
@@ -19,13 +20,18 @@ globals
   Final-Cost    ;; The final cost of the path given by A*
 ]
 
-turtles-own
+breed [ cars car ]
+
+cars-own
 [
+  id
   speed     ;; the speed of the turtle
   up-car?   ;; true if the turtle moves downwards and false if it moves to the right
   wait-time ;; the amount of time since the last time a turtle has moved
   objective ;;
   next-cross
+  i-go-first
+  conflicting-cars
 ]
 
 patches-own
@@ -82,7 +88,7 @@ to setup
   ]
 
   ;; Now create the turtles and have each created turtle call the functions setup-cars and set-car-color
-  create-turtles num-cars
+  create-cars num-cars
   [
     setup-cars
     set-initial-car-color
@@ -91,13 +97,20 @@ to setup
   ]
 
   ;; give the turtles an initial speed
-  ask turtles [ set-car-speed ]
+  ask cars [ set-car-speed
+    if not (intersection?)
+    [set next-cross get-next-crossing
+      ;ask next-cross [set pcolor black]
+    ]
+  ]
+  ask cars [send-message "update" self]
 
   reset-ticks
 end
 
 ;; Initialize the global variables to appropriate values
 to setup-globals
+  set counter 0
   set current-light nobody ;; just for now, since there are no lights yet
   set phase 0
   set num-cars-stopped 0
@@ -152,6 +165,9 @@ end
 
 ;; Initialize the turtle variables to appropriate values and place the turtle on an empty road patch.
 to setup-cars  ;; turtle procedure
+  set id counter
+  set counter (counter + 1)
+  set conflicting-cars 0
   set speed 0
   set wait-time 0
   put-on-empty-road
@@ -170,11 +186,12 @@ to setup-cars  ;; turtle procedure
   ifelse up-car?
   [ set heading 180 ]
   [ set heading 90 ]
+
 end
 
 ;; Find a road patch without any turtles on it and place the turtle there.
 to put-on-empty-road  ;; turtle procedure
-  move-to one-of roads with [not any? turtles-on self]
+  move-to one-of roads with [(not any? turtles-on self and intersection? = false]
 end
 
 
@@ -194,7 +211,7 @@ to go
   ;; set the turtles speed for this time thru the procedure, move them forward their speed,
   ;; record data for plotting, and set the color of the turtles to an appropriate color
   ;; based on their speed
-  ask turtles [
+  ask cars [
     set-car-speed
     if random 2 = 0
     [change-direction]
@@ -203,10 +220,20 @@ to go
     set-car-color
     if test-objective
     [set color  yellow]
-    if not ()
-    [set next-cross get-next-crossing
-      ask next-cross [set pcolor black]]
+
+    if not (intersection?) and not (get-next-crossing = next-cross)
+    [;ask next-cross [set pcolor white]
+      set next-cross get-next-crossing
+      set conflicting-cars 0
+      send-message "update" self
+      ;ask next-cross [set pcolor black]
+    ]
   ]
+
+  ;;to tests number of initial conflicting cars
+  ask cars [
+  if conflicting-cars != 0
+    [show count conflicting-cars]]
 
   ;; update the phase and the global clock
   next-phase
@@ -441,32 +468,46 @@ end
 
 ;;;  Send a message to all cars
 ;;;  Sends the next crossing patch, the car turtle with all info
-to send-message [msg crossing car]
-  ask turtles [new-message msg crossing car]
+to send-message [msg car-info]
+  ask cars [new-message msg car-info]
 end
 
 
 ;;;
 ;;;  Send a message to a specified car
 ;;;  Sends the next crossing patch, the car turtle with all info
-to send-message-to-car [id-car msg crossing car]
-  ask turtle id-car [new-message msg crossing car]
+to send-message-to-car [id-car msg car-info]
+  ask turtle id-car [new-message msg car-info]
 end
 
 ;;;
 ;;;  Handle a new received message
 ;;;
-to new-message [msg crossing car]
+to new-message [msg car-info]
 
-  if(msg = "grab")
+  if(msg = "update")
   [
-    ;set boxes-on-ramp (boxes-on-ramp - 1)
+    if is-conflicting-car car-info
+    [
+      ifelse conflicting-cars != 0
+      [if not (any? conflicting-cars with [pxcor = [pxcor] of car-info and pycor = [pycor] of car-info])
+        [set conflicting-cars (turtle-set conflicting-cars car-info)]]
+      [set conflicting-cars (turtle-set car-info)]
+      send-message-to-car [id] of car-info "update" self
+
+    ]
   ]
   if(msg = "drop")
   [
     ;set boxes-on-shelves (boxes-on-shelves + 1)
   ]
+end
 
+to-report is-conflicting-car [car-info]
+  ifelse self != car-info and ([pxcor] of next-cross = [pxcor] of ([next-cross] of car-info)) and ([pycor] of next-cross = [pycor] of ([next-cross] of car-info))
+  [report true
+  ]
+  [report false]
 end
 
 
@@ -696,15 +737,15 @@ power?
 -1000
 
 SLIDER
-12
-71
-293
-104
+13
+74
+294
+107
 num-cars
 num-cars
 1
 400
-1.0
+25.0
 1
 1
 NIL
@@ -771,7 +812,7 @@ speed-limit
 speed-limit
 0.1
 1
-0.4
+1.0
 0.1
 1
 NIL
@@ -797,7 +838,7 @@ ticks-per-cycle
 ticks-per-cycle
 1
 100
-50.0
+22.0
 1
 1
 NIL
