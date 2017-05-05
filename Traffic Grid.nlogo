@@ -231,6 +231,7 @@ to go
   ]
 
   ;;to tests number of initial conflicting cars
+  show "Info:"
   ask cars [
   if conflicting-cars != 0
     [show count conflicting-cars]]
@@ -469,7 +470,7 @@ end
 ;;;  Send a message to all cars
 ;;;  Sends the next crossing patch, the car turtle with all info
 to send-message [msg car-info]
-  ask cars [new-message msg car-info]
+  ask cars [new-message msg car-info false]
 end
 
 
@@ -477,30 +478,37 @@ end
 ;;;  Send a message to a specified car
 ;;;  Sends the next crossing patch, the car turtle with all info
 to send-message-to-car [id-car msg car-info]
-  ask turtle id-car [new-message msg car-info]
+  ask cars [
+    if id-car = id
+    [new-message msg car-info true]]
 end
 
 ;;;
 ;;;  Handle a new received message
 ;;;
-to new-message [msg car-info]
+to new-message [msg car-info is-return-message]
 
   if(msg = "update")
   [
-    if is-conflicting-car car-info
-    [
-      ifelse conflicting-cars != 0
-      [if not (any? conflicting-cars with [pxcor = [pxcor] of car-info and pycor = [pycor] of car-info])
-        [set conflicting-cars (turtle-set conflicting-cars car-info)]]
-      [set conflicting-cars (turtle-set car-info)]
-      send-message-to-car [id] of car-info "update" self
+    ;remove past conflict car
+    if conflicting-cars != 0
+    [if any? conflicting-cars with [ [id] of car-info = [id] of myself and not ([pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself != [pycor] of [next-cross] of car-info)]
+      [show "lol"
+        set conflicting-cars  conflicting-cars with [ [id] of car-info != [id] of myself]]]
 
+    if is-conflicting-car car-info
+    [ifelse conflicting-cars != 0
+      [if not (any? conflicting-cars with [ [pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself = [pycor] of [next-cross] of car-info ])
+        [set conflicting-cars (turtle-set conflicting-cars car-info)
+        if not is-return-message
+        [send-message-to-car [id] of car-info "update" self]]]
+      [set conflicting-cars (turtle-set car-info)
+        if not is-return-message
+        [send-message-to-car [id] of car-info "update" self]
+      ]
     ]
   ]
-  if(msg = "drop")
-  [
-    ;set boxes-on-shelves (boxes-on-shelves + 1)
-  ]
+
 end
 
 to-report is-conflicting-car [car-info]
@@ -745,7 +753,7 @@ num-cars
 num-cars
 1
 400
-25.0
+6.0
 1
 1
 NIL
