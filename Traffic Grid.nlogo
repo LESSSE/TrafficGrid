@@ -490,15 +490,22 @@ to new-message [msg car-info is-return-message]
 
   if(msg = "update")
   [
-    ;remove past conflict car
+    set-conflicting-cars car-info is-return-message
+
+
+  ]
+
+end
+
+to set-conflicting-cars [car-info is-return-message]
+  ;remove past conflict car
     if conflicting-cars != 0
-    [if any? conflicting-cars with [ [id] of car-info = [id] of myself and not ([pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself != [pycor] of [next-cross] of car-info)]
-      [show "lol"
-        set conflicting-cars  conflicting-cars with [ [id] of car-info != [id] of myself]]]
+    [if any? conflicting-cars with [ [id] of car-info = [id] of self  ]
+      [set conflicting-cars  conflicting-cars with [ [id] of car-info != [id] of self]]]
 
     if is-conflicting-car car-info
     [ifelse conflicting-cars != 0
-      [if not (any? conflicting-cars with [ [pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself = [pycor] of [next-cross] of car-info ])
+      [if not (any? conflicting-cars with [ [pxcor] of self = [pxcor] of car-info and [pycor] of self = [pycor] of car-info ])
         [set conflicting-cars (turtle-set conflicting-cars car-info)
         if not is-return-message
         [send-message-to-car [id] of car-info "update" self]]]
@@ -507,12 +514,10 @@ to new-message [msg car-info is-return-message]
         [send-message-to-car [id] of car-info "update" self]
       ]
     ]
-  ]
-
 end
 
 to-report is-conflicting-car [car-info]
-  ifelse self != car-info and ([pxcor] of next-cross = [pxcor] of ([next-cross] of car-info)) and ([pycor] of next-cross = [pycor] of ([next-cross] of car-info))
+  ifelse id != [id] of car-info and ([pxcor] of next-cross = [pxcor] of ([next-cross] of car-info)) and ([pycor] of next-cross = [pycor] of ([next-cross] of car-info))
   [report true
   ]
   [report false]
@@ -753,7 +758,7 @@ num-cars
 num-cars
 1
 400
-6.0
+16.0
 1
 1
 NIL
