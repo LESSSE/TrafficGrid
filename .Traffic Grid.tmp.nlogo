@@ -33,7 +33,7 @@ cars-own
   i-go-first
   conflicting-cars
   conflicting-car
-
+  path
 
 ]
 
@@ -109,6 +109,7 @@ to setup
   ]
   ask cars [send-message "update" self]
   ask cars [set-conflicting-car]
+  ask cars[set-passing-first-variable]
 
   reset-ticks
 end
@@ -246,6 +247,10 @@ to go
     [show count conflicting-cars]]
 
   ask cars [set-conflicting-car]
+
+
+  ask cars [if not (intersection?)
+    [set-passing-first-variable]]
 
   ;; update the phase and the global clock
   next-phase
@@ -575,6 +580,54 @@ to set-conflicting-car
 
 end
 
+to set-passing-first-variable
+  let my-dis 0
+  let conf-dis 0
+
+  if conflicting-car != 0
+  [ifelse up-car?
+    [set my-dis one-of [pycor] of next-cross - pycor
+      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conflicting-car]
+    [set my-dis one-of [pxcor] of next-cross - pxcor
+      set conf-dis one-of [pycor] of next-cross - [pycor] of conflicting-car]
+
+  if my-dis < 0
+  [set my-dis my-dis * -1]
+
+  if conf-dis < 0
+  [set conf-dis conf-dis * -1]
+
+  ifelse speed != 0 and [speed] of conflicting-car != 0
+  [ifelse (my-dis / speed) < (conf-dis / [speed] of conflicting-car) or ((my-dis / speed) = (conf-dis / [speed] of conflicting-car)  and id < [id] of conflicting-car)
+    [set i-go-first true
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first false]
+      ]]
+    [set i-go-first false
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first true]
+      ]]]
+  [ifelse my-dis  < conf-dis or (my-dis = conf-dis and id < [id] of conflicting-car)
+    [set i-go-first true
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first false]
+      ]]
+    [set i-go-first false
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first true]
+      ]]]
+  ]
+
+  if conflicting-car = 0
+  [set i-go-first true]
+
+
+end
+
 to-report is-conflicting-car [car-info]
   ifelse id != [id] of car-info and ([pxcor] of next-cross = [pxcor] of ([next-cross] of car-info)) and ([pycor] of next-cross = [pycor] of ([next-cross] of car-info))
   [report true
@@ -825,7 +878,7 @@ num-cars
 num-cars
 1
 400
-18.0
+34.0
 1
 1
 NIL
