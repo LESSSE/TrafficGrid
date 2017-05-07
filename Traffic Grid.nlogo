@@ -501,16 +501,22 @@ to new-message [msg car-info is-return-message]
 
   if(msg = "update")
   [
-    ;remove past conflict car
+    set-conflicting-cars car-info is-return-message
+
+
+  ]
+
+end
+
+to set-conflicting-cars [car-info is-return-message]
+  ;remove past conflict car
     if conflicting-cars != 0
-    [
-      if any? conflicting-cars with [ [id] of car-info = [id] of myself and not ([pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself != [pycor] of [next-cross] of car-info)]
-      [show "lol"
-        set conflicting-cars  conflicting-cars with [ [id] of car-info != [id] of myself]]]
+    [if any? conflicting-cars with [ [id] of car-info = [id] of self  ]
+      [set conflicting-cars  conflicting-cars with [ [id] of car-info != [id] of self]]]
 
     if is-conflicting-car car-info
     [ifelse conflicting-cars != 0
-      [if not (any? conflicting-cars with [ [pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself = [pycor] of [next-cross] of car-info ])
+      [if not (any? conflicting-cars with [ [pxcor] of self = [pxcor] of car-info and [pycor] of self = [pycor] of car-info ])
         [set conflicting-cars (turtle-set conflicting-cars car-info)
         if not is-return-message
         [send-message-to-car [id] of car-info "update" self]]]
@@ -519,12 +525,10 @@ to new-message [msg car-info is-return-message]
         [send-message-to-car [id] of car-info "update" self]
       ]
     ]
-  ]
-
 end
 
 to-report is-conflicting-car [car-info]
-  ifelse self != car-info and ([pxcor] of next-cross = [pxcor] of ([next-cross] of car-info)) and ([pycor] of next-cross = [pycor] of ([next-cross] of car-info))
+  ifelse id != [id] of car-info and ([pxcor] of next-cross = [pxcor] of ([next-cross] of car-info)) and ([pycor] of next-cross = [pycor] of ([next-cross] of car-info))
   [report true
   ]
   [report false]
@@ -732,7 +736,7 @@ grid-size-y
 grid-size-y
 1
 9
-5.0
+6.0
 1
 1
 NIL
@@ -765,15 +769,15 @@ power?
 -1000
 
 SLIDER
-13
-74
-294
-107
+12
+71
+293
+104
 num-cars
 num-cars
 1
 400
-4.0
+18.0
 1
 1
 NIL
@@ -866,7 +870,7 @@ ticks-per-cycle
 ticks-per-cycle
 1
 100
-22.0
+20.0
 1
 1
 NIL
@@ -1014,11 +1018,23 @@ It also uses a chooser to allow the user to choose between several different pos
 
 ## RELATED MODELS
 
-Traffic Basic simulates the flow of a single lane of traffic in one direction
-Traffic 2 Lanes adds a second lane of traffic
-Traffic Intersection simulates a single intersection
+- "Traffic Basic": a simple model of the movement of cars on a highway.
 
-The HubNet activity Gridlock has very similar functionality but allows a group of users to control the cars in a participatory fashion.
+- "Traffic Basic Utility": a version of "Traffic Basic" including a utility function for the cars.
+
+- "Traffic Basic Adaptive": a version of "Traffic Basic" where cars adapt their acceleration to try and maintain a smooth flow of traffic.
+
+- "Traffic Basic Adaptive Individuals": a version of "Traffic Basic Adaptive" where each car adapts individually, instead of all cars adapting in unison.
+
+- "Traffic 2 Lanes": a more sophisticated two-lane version of the "Traffic Basic" model.
+
+- "Traffic Intersection": a model of cars traveling through a single intersection.
+
+- "Traffic Grid Goal": a version of "Traffic Grid" where the cars have goals, namely to drive to and from work.
+
+- "Gridlock HubNet": a version of "Traffic Grid" where students control traffic lights in real-time.
+
+- "Gridlock Alternate HubNet": a version of "Gridlock HubNet" where students can enter NetLogo code to plot custom metrics.
 
 ## HOW TO CITE
 
