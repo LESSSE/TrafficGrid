@@ -33,6 +33,8 @@ cars-own
   i-go-first
   conflicting-cars
   conflicting-car
+  path
+
 ]
 
 patches-own
@@ -95,6 +97,7 @@ to setup
     set-initial-car-color
     record-data
     setObjective
+    setPath
   ]
 
   ;; give the turtles an initial speed
@@ -135,6 +138,10 @@ to setup-patches
     set my-column -1
     set my-phase -1
     set pcolor brown + 3
+    set father nobody
+    set Cost-path 0
+    set visited? false
+    set active? false
   ]
 
   ;; initialize the global variables that hold patch agentsets
@@ -443,6 +450,11 @@ to setObjective
   [ set objective one-of roads ]
 end
 
+to setPath
+  set path A* patch-here objective roads
+  show path
+end
+
 to-report test-objective
   ifelse pxcor = [pxcor] of objective and pycor = [pycor] of objective
   [ setObjective
@@ -630,7 +642,15 @@ to-report A* [#Start #Goal #valid-map]
         ; and deactivate it, because its children will be computed right now
         set active? false
         ; Compute its valid neighbors
-        let valid-neighbors neighbors with [member? self #valid-map and pxcor - [pxcor] of self > 0 and pycor - [pycor] of self > 0]
+        let #car self
+        let valid-neighbors neighbors with [member? self #valid-map]
+        ifelse 18 = pxcor
+        [ifelse -18 = pycor
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self > 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self < 0 and [pxcor] of #car = [pxcor] of self)]]
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self > 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self > 0 and [pxcor] of #car = [pxcor] of self)]]]
+        [ifelse -18 = pycor
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self < 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self < 0 and [pxcor] of #car = [pxcor] of self)]]
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self < 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self > 0 and [pxcor] of #car = [pxcor] of self)]]]
         ask valid-neighbors
         [
           ; There are 2 types of valid neighbors:
@@ -764,7 +784,7 @@ grid-size-y
 grid-size-y
 1
 9
-5.0
+6.0
 1
 1
 NIL
@@ -797,15 +817,15 @@ power?
 -1000
 
 SLIDER
-13
-74
-294
-107
+12
+71
+293
+104
 num-cars
 num-cars
 1
 400
-67.0
+18.0
 1
 1
 NIL
@@ -898,7 +918,7 @@ ticks-per-cycle
 ticks-per-cycle
 1
 100
-22.0
+20.0
 1
 1
 NIL
@@ -1046,11 +1066,23 @@ It also uses a chooser to allow the user to choose between several different pos
 
 ## RELATED MODELS
 
-Traffic Basic simulates the flow of a single lane of traffic in one direction
-Traffic 2 Lanes adds a second lane of traffic
-Traffic Intersection simulates a single intersection
+- "Traffic Basic": a simple model of the movement of cars on a highway.
 
-The HubNet activity Gridlock has very similar functionality but allows a group of users to control the cars in a participatory fashion.
+- "Traffic Basic Utility": a version of "Traffic Basic" including a utility function for the cars.
+
+- "Traffic Basic Adaptive": a version of "Traffic Basic" where cars adapt their acceleration to try and maintain a smooth flow of traffic.
+
+- "Traffic Basic Adaptive Individuals": a version of "Traffic Basic Adaptive" where each car adapts individually, instead of all cars adapting in unison.
+
+- "Traffic 2 Lanes": a more sophisticated two-lane version of the "Traffic Basic" model.
+
+- "Traffic Intersection": a model of cars traveling through a single intersection.
+
+- "Traffic Grid Goal": a version of "Traffic Grid" where the cars have goals, namely to drive to and from work.
+
+- "Gridlock HubNet": a version of "Traffic Grid" where students control traffic lights in real-time.
+
+- "Gridlock Alternate HubNet": a version of "Gridlock HubNet" where students can enter NetLogo code to plot custom metrics.
 
 ## HOW TO CITE
 
