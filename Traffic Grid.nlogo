@@ -32,6 +32,7 @@ cars-own
   next-cross
   i-go-first
   conflicting-cars
+  path
 ]
 
 patches-own
@@ -94,6 +95,7 @@ to setup
     set-initial-car-color
     record-data
     setObjective
+    setPath
   ]
 
   ;; give the turtles an initial speed
@@ -133,6 +135,10 @@ to setup-patches
     set my-column -1
     set my-phase -1
     set pcolor brown + 3
+    set father nobody
+    set Cost-path 0
+    set visited? false
+    set active? false
   ]
 
   ;; initialize the global variables that hold patch agentsets
@@ -439,6 +445,11 @@ to setObjective
   [ set objective one-of roads ]
 end
 
+to setPath
+  set path A* patch-here objective roads
+  show path
+end
+
 to-report test-objective
   ifelse pxcor = [pxcor] of objective and pycor = [pycor] of objective
   [ setObjective
@@ -492,7 +503,8 @@ to new-message [msg car-info is-return-message]
   [
     ;remove past conflict car
     if conflicting-cars != 0
-    [if any? conflicting-cars with [ [id] of car-info = [id] of myself and not ([pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself != [pycor] of [next-cross] of car-info)]
+    [
+      if any? conflicting-cars with [ [id] of car-info = [id] of myself and not ([pxcor] of [next-cross] of myself = [pxcor] of [next-cross] of car-info and [pycor] of [next-cross] of myself != [pycor] of [next-cross] of car-info)]
       [show "lol"
         set conflicting-cars  conflicting-cars with [ [id] of car-info != [id] of myself]]]
 
@@ -578,7 +590,15 @@ to-report A* [#Start #Goal #valid-map]
         ; and deactivate it, because its children will be computed right now
         set active? false
         ; Compute its valid neighbors
-        let valid-neighbors neighbors with [member? self #valid-map and pxcor - [pxcor] of self > 0 and pycor - [pycor] of self > 0]
+        let #car self
+        let valid-neighbors neighbors with [member? self #valid-map]
+        ifelse 18 = pxcor
+        [ifelse -18 = pycor
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self > 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self < 0 and [pxcor] of #car = [pxcor] of self)]]
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self > 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self > 0 and [pxcor] of #car = [pxcor] of self)]]]
+        [ifelse -18 = pycor
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self < 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self < 0 and [pxcor] of #car = [pxcor] of self)]]
+          [set valid-neighbors valid-neighbors with [([pxcor] of #car - [pxcor] of self < 0 and [pycor] of #car = [pycor] of self) or ([pycor] of #car - [pycor] of self > 0 and [pxcor] of #car = [pxcor] of self)]]]
         ask valid-neighbors
         [
           ; There are 2 types of valid neighbors:
@@ -753,7 +773,7 @@ num-cars
 num-cars
 1
 400
-6.0
+4.0
 1
 1
 NIL
