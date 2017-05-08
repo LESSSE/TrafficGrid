@@ -32,6 +32,7 @@ cars-own
   next-cross
   i-go-first
   conflicting-cars
+  conflicting-car
   path
   next
 ]
@@ -107,6 +108,8 @@ to setup
     ]
   ]
   ask cars [send-message "update" self]
+  ask cars [set-conflicting-car]
+  ask cars[set-passing-first-variable]
 
   reset-ticks
 end
@@ -242,6 +245,14 @@ to go
   ask cars [
   if conflicting-cars != 0
     [show count conflicting-cars]]
+
+  ask cars [set-conflicting-car]
+
+
+  ask cars [if not (intersection?)
+    [set-passing-first-variable]]
+
+  ask cars [adjust-velocity]
 
   ;; update the phase and the global clock
   next-phase
@@ -540,6 +551,121 @@ to set-conflicting-cars [car-info is-return-message]
         [send-message-to-car [id] of car-info "update" self]
       ]
     ]
+end
+
+to set-conflicting-car
+  let my-number 1
+  let iterate-cars conflicting-cars
+  let temp-car 0
+
+  if conflicting-cars != 0
+  [ask conflicting-cars
+  [
+
+      if up-car? and [up-car?] of myself
+        [if pycor < [pycor] of myself
+          [set my-number my-number + 1]]
+      if not up-car? and not [up-car?] of myself
+        [if pxcor > [pxcor] of myself
+          [set my-number my-number + 1]]
+
+
+  ]
+  ask conflicting-cars
+  [
+    if not up-car? and [up-car?] of myself
+      [set iterate-cars iterate-cars with [ not [up-car?] of self]
+        while [my-number > 0 and count (iterate-cars with-max [pxcor]) != 0]
+          [set temp-car one-of (iterate-cars with-max [pxcor] )
+          set iterate-cars  iterate-cars with [ [id] of temp-car != [id] of self]
+          set my-number my-number - 1]]
+    if up-car? and not [up-car?] of myself
+      [set iterate-cars iterate-cars with [  [up-car?] of self]
+        while [my-number > 0 and count (iterate-cars with-min [pycor]) != 0]
+          [set temp-car one-of (iterate-cars with-min [pycor] )
+          set iterate-cars  iterate-cars with [ [id] of temp-car != [id] of self]
+          set my-number my-number - 1]]
+
+  ]
+  ifelse temp-car != 0 and my-number = 0
+  [set conflicting-car temp-car]
+  [set conflicting-car 0]
+  ;show "lol"
+  ;show conflicting-car
+  ]
+
+end
+
+to set-passing-first-variable
+  let my-dis 0
+  let conf-dis 0
+
+  if conflicting-car != 0
+  [ifelse up-car?
+    [set my-dis one-of [pycor] of next-cross - pycor
+      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conflicting-car]
+    [set my-dis one-of [pxcor] of next-cross - pxcor
+      set conf-dis one-of [pycor] of next-cross - [pycor] of conflicting-car]
+
+  if my-dis < 0
+  [set my-dis my-dis * -1]
+
+  if conf-dis < 0
+  [set conf-dis conf-dis * -1]
+
+  ifelse speed != 0 and [speed] of conflicting-car != 0
+  [ifelse (my-dis / speed) < (conf-dis / [speed] of conflicting-car) or ((my-dis / speed) = (conf-dis / [speed] of conflicting-car)  and id < [id] of conflicting-car)
+    [set i-go-first true
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first false]
+      ]]
+    [set i-go-first false
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first true]
+      ]]]
+  [ifelse my-dis  < conf-dis or (my-dis = conf-dis and id < [id] of conflicting-car)
+    [set i-go-first true
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first false]
+      ]]
+    [set i-go-first false
+      ask cars[
+        if id = [id] of [conflicting-car] of myself
+        [set i-go-first true]
+      ]]]
+  ]
+
+  if conflicting-car = 0
+  [set i-go-first true]
+
+end
+
+to adjust-velocity
+  let my-dis 0
+  let conf-dis 0
+
+  if conflicting-car != 0
+  [ifelse up-car?
+    [set my-dis one-of [pycor] of next-cross - pycor
+      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conflicting-car]
+    [set my-dis one-of [pxcor] of next-cross - pxcor
+      set conf-dis one-of [pycor] of next-cross - [pycor] of conflicting-car]
+
+  if my-dis < 0
+  [set my-dis my-dis * -1]
+
+  if conf-dis < 0
+  [set conf-dis conf-dis * -1]
+
+  if speed != 0 and [speed] of conflicting-car != 0
+  [if (my-dis / speed) = (conf-dis / [speed] of conflicting-car)  and i-go-first = false
+    [slow-down
+     slow-down]]
+  ]
+
 end
 
 to-report is-conflicting-car [car-info]
