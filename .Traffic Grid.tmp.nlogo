@@ -12,6 +12,7 @@ globals
   ;; patch agentsets
   intersections ;; agentset containing the patches that are intersections
   roads         ;; agentset containing the patches that are roads
+  objective-counter ;; number of objectives done
 
                 ;; Things bellow are for A*
 
@@ -34,7 +35,7 @@ cars-own
   conflicting-cars
   conflicting-car
   path
-
+  next
 ]
 
 patches-own
@@ -117,6 +118,7 @@ end
 ;; Initialize the global variables to appropriate values
 to setup-globals
   set counter 0
+  set objective-counter 0
   set current-light nobody ;; just for now, since there are no lights yet
   set phase 0
   set num-cars-stopped 0
@@ -180,6 +182,7 @@ to setup-cars  ;; turtle procedure
   set conflicting-cars 0
   set speed 0
   set wait-time 0
+  set next 0
   put-on-empty-road
   ifelse intersection?
   [
@@ -223,13 +226,17 @@ to go
   ;; based on their speed
   ask cars [
     set-car-speed
-    if random 2 = 0
-    [change-direction]
     fd speed
     record-data
     set-car-color
     if test-objective
-    [set color  yellow]
+    [setObjective
+      ifelse color = yellow
+      [set color blue]
+      [set color yellow]
+    set objective-counter objective-counter + 1
+
+    setPath]
 
     if not (intersection?) and not (get-next-crossing = next-cross)
     [;ask next-cross [set pcolor white]
@@ -238,6 +245,8 @@ to go
       send-message "update" self
       ;ask next-cross [set pcolor black]
     ]
+    if next = 0 or [pxcor] of patch-here >= [pxcor] of next or [pycor] of patch-here <= [pycor] of next
+    [nextPatch]
   ]
 
   ;;to tests number of initial conflicting cars
@@ -371,6 +380,22 @@ to change-direction
 
 end
 
+to nextPatch
+  if not empty? path
+  [set next item 0 path]
+  if intersection?
+    [
+      ifelse heading = 90
+      [if pxcor = [pxcor] of next
+        [change-direction]]
+      [if pycor = [pycor] of next
+        [change-direction]]
+    ]
+  if not empty? path
+  [set path but-first path]
+
+end
+
 
 ;; set the speed variable of the car to an appropriate value (not exceeding the
 ;; speed limit) based on whether there are cars on the patch in front of the car
@@ -407,7 +432,7 @@ end
 to slow-down  ;; turtle procedure
   ifelse speed > (speed-limit / 2)
   [set speed speed - ( 5 * acceleration )]
-  [set speed speed -  * acceleration]
+  [set speed speed - 2 * acceleration]
   if speed <= 0  ;;if speed < 0
   [ set speed 0 ]
 end
@@ -470,13 +495,11 @@ end
 
 to setPath
   set path A* patch-here objective roads
-  show path
 end
 
 to-report test-objective
   ifelse pxcor = [pxcor] of objective and pycor = [pycor] of objective
-  [ setObjective
-    report true]
+  [report true]
   [report false]
 end
 
@@ -921,7 +944,7 @@ num-cars
 num-cars
 1
 400
-34.0
+1.0
 1
 1
 NIL
@@ -1014,7 +1037,7 @@ ticks-per-cycle
 ticks-per-cycle
 1
 100
-20.0
+1.0
 1
 1
 NIL
