@@ -241,10 +241,10 @@ to go
   ]
 
   ;;to tests number of initial conflicting cars
-  show "Info:"
-  ask cars [
-  if conflicting-cars != 0
-    [show count conflicting-cars]]
+  ;show "Info:"
+  ;ask cars [
+  ;if conflicting-cars != 0
+  ;  [show count conflicting-cars]]
 
   ask cars [set-conflicting-car]
 
@@ -377,6 +377,11 @@ end
 to set-speed [ delta-x delta-y ]  ;; turtle procedure
   ;; get the turtles on the patch in front of the turtle
   let turtles-ahead turtles-at delta-x delta-y
+  let turtles-more-ahead turtles-at delta-x delta-y
+
+  ifelse up-car?
+  [set turtles-more-ahead (turtle-set turtles-at delta-x (delta-y - 1) turtles-at delta-x (delta-y - 2))]
+  [set turtles-more-ahead (turtle-set turtles-at (delta-x + 1) delta-y turtles-at (delta-x + 2) delta-y)]
 
   ;; if there are turtles in front of the turtle, slow down
   ;; otherwise, speed up
@@ -391,14 +396,20 @@ to set-speed [ delta-x delta-y ]  ;; turtle procedure
       slow-down
     ]
   ]
-  [ speed-up ]
+  [
+    ifelse any? turtles-more-ahead with [ [speed] of myself < speed]
+    [set speed [speed] of one-of turtles-more-ahead
+      slow-down]
+    [speed-up] ]
 end
 
 ;; decrease the speed of the turtle
 to slow-down  ;; turtle procedure
-  ifelse speed <= 0  ;;if speed < 0
+  ifelse speed > (speed-limit / 2)
+  [set speed speed - ( 5 * acceleration )]
+  [set speed speed -  * acceleration]
+  if speed <= 0  ;;if speed < 0
   [ set speed 0 ]
-  [ set speed speed - acceleration ]
 end
 
 ;; increase the speed of the turtle
@@ -585,13 +596,15 @@ end
 to set-passing-first-variable
   let my-dis 0
   let conf-dis 0
+  let conf-id id
 
   if conflicting-car != 0
-  [ifelse up-car?
+  [let conf-car one-of cars with [id = conf-id ]
+  ifelse up-car?
     [set my-dis one-of [pycor] of next-cross - pycor
-      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conflicting-car]
+      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conf-car]
     [set my-dis one-of [pxcor] of next-cross - pxcor
-      set conf-dis one-of [pycor] of next-cross - [pycor] of conflicting-car]
+      set conf-dis one-of [pycor] of next-cross - [pycor] of conf-car]
 
   if my-dis < 0
   [set my-dis my-dis * -1]
@@ -600,7 +613,7 @@ to set-passing-first-variable
   [set conf-dis conf-dis * -1]
 
   ifelse speed != 0 and [speed] of conflicting-car != 0
-  [ifelse (my-dis / speed) < (conf-dis / [speed] of conflicting-car) or ((my-dis / speed) = (conf-dis / [speed] of conflicting-car)  and id < [id] of conflicting-car)
+  [ifelse (my-dis / speed) < (conf-dis / [speed] of conf-car) or ((my-dis / speed) = (conf-dis / [speed] of conf-car)  and id < [id] of conf-car)
     [set i-go-first true
       ask cars[
         if id = [id] of [conflicting-car] of myself
@@ -611,7 +624,7 @@ to set-passing-first-variable
         if id = [id] of [conflicting-car] of myself
         [set i-go-first true]
       ]]]
-  [ifelse my-dis  < conf-dis or (my-dis = conf-dis and id < [id] of conflicting-car)
+  [ifelse my-dis  < conf-dis or (my-dis = conf-dis and id < [id] of conf-car)
     [set i-go-first true
       ask cars[
         if id = [id] of [conflicting-car] of myself
@@ -632,13 +645,18 @@ end
 to adjust-velocity
   let my-dis 0
   let conf-dis 0
+  let my-dis-front 0
+  let conf-id id
 
   if conflicting-car != 0
-  [ifelse up-car?
+  [let conf-car one-of cars with [id = conf-id]
+  ifelse up-car?
     [set my-dis one-of [pycor] of next-cross - pycor
-      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conflicting-car]
+      set conf-dis one-of [pxcor] of next-cross - [pxcor] of conf-car
+      set my-dis-front one-of [pycor] of next-cross - (pycor - 1)]
     [set my-dis one-of [pxcor] of next-cross - pxcor
-      set conf-dis one-of [pycor] of next-cross - [pycor] of conflicting-car]
+      set conf-dis one-of [pycor] of next-cross - [pycor] of conf-car
+    set my-dis-front one-of [pxcor] of next-cross - (pxcor + 1)]
 
   if my-dis < 0
   [set my-dis my-dis * -1]
@@ -646,10 +664,9 @@ to adjust-velocity
   if conf-dis < 0
   [set conf-dis conf-dis * -1]
 
-  if speed != 0 and [speed] of conflicting-car != 0
-  [if (my-dis / speed) = (conf-dis / [speed] of conflicting-car)  and i-go-first = false
-    [slow-down
-]]
+  if speed != 0 and [speed] of conf-car != 0
+  [if ((my-dis / speed) = (conf-dis / [speed] of conf-car)  and i-go-first = false) or ( (my-dis-front / speed) = (conf-dis / [speed] of conf-car)  and i-go-first = false)
+    [slow-down]]
   ]
 
 end
@@ -863,7 +880,7 @@ grid-size-y
 grid-size-y
 1
 9
-6.0
+5.0
 1
 1
 NIL
@@ -971,7 +988,7 @@ speed-limit
 speed-limit
 0.1
 1
-1.0
+0.7
 0.1
 1
 NIL
