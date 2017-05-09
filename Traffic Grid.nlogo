@@ -233,7 +233,8 @@ to go
     [setObjective
       set color yellow
     set objective-counter objective-counter + 1
-    setPath]
+    setPath
+]
 
     if not (intersection?) and not (get-next-crossing = next-cross)
     [;ask next-cross [set pcolor white]
@@ -242,9 +243,15 @@ to go
       send-message "update" self
       ;ask next-cross [set pcolor black]
     ]
-    if next = 0 or [pxcor] of patch-here >= [pxcor] of next or [pycor] of patch-here <= [pycor] of next
+    if next = 0 or [pxcor] of patch-here >= [pxcor] of next or [pycor] of patch-here <= [pycor] of next or ([pxcor] of patch-here = max-pxcor and [pxcor] of next = min-pxcor) or ([pycor] of patch-here = min-pycor and [pycor] of next = max-pycor)
     [nextPatch]
   ]
+
+  ;ask cars[
+   ; if [pxcor] of next = [pxcor] of objective and [pycor] of next = [pycor] of objective and length path = 0
+   ; [setPath
+   ;   set next 0]
+  ;]
 
   ;;to tests number of initial conflicting cars
   ;show "Info:"
@@ -941,7 +948,7 @@ num-cars
 num-cars
 1
 400
-49.0
+1.0
 1
 1
 NIL
