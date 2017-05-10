@@ -233,8 +233,7 @@ to go
     [setObjective
       set color yellow
     set objective-counter objective-counter + 1
-    setPath
-]
+    setPath]
 
     if not (intersection?) and not (get-next-crossing = next-cross)
     [;ask next-cross [set pcolor white]
@@ -243,8 +242,7 @@ to go
       send-message "update" self
       ;ask next-cross [set pcolor black]
     ]
-    if next = 0 or [pxcor] of patch-here >= [pxcor] of next or [pycor] of patch-here <= [pycor] of next or ([pxcor] of patch-here = max-pxcor and [pxcor] of next = min-pxcor) or ([pycor] of patch-here = min-pycor and [pycor] of next = max-pycor)
-    [nextPatch]
+    nextPatch
   ]
 
   ;ask cars[
@@ -385,9 +383,9 @@ to change-direction
 end
 
 to nextPatch
-  if not empty? path
-  [set next item 0 path]
-  if intersection?
+  ifelse not empty? path
+  [set next item 0 path
+    if intersection?
     [
       ifelse heading = 90
       [if pxcor = [pxcor] of next
@@ -395,9 +393,8 @@ to nextPatch
       [if pycor = [pycor] of next
         [change-direction]]
     ]
-  if not empty? path
-  [set path but-first path]
-
+    set path but-first path]
+  [setPath]
 end
 
 
@@ -907,7 +904,7 @@ grid-size-y
 grid-size-y
 1
 9
-5.0
+9.0
 1
 1
 NIL
@@ -922,7 +919,7 @@ grid-size-x
 grid-size-x
 1
 9
-5.0
+9.0
 1
 1
 NIL
@@ -948,7 +945,7 @@ num-cars
 num-cars
 1
 400
-1.0
+100.0
 1
 1
 NIL
@@ -1015,7 +1012,7 @@ speed-limit
 speed-limit
 0.1
 1
-0.7
+1.0
 0.1
 1
 NIL
