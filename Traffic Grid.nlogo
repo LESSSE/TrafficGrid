@@ -226,13 +226,14 @@ to go
   ;; based on their speed
   ask cars [
     set-car-speed
-    fd speed
+    nextPatch
     record-data
     set-car-color
     if test-objective
     [setObjective
       set color yellow
     set objective-counter objective-counter + 1
+    show objective-counter
     setPath]
 
     if not (intersection?) and not (get-next-crossing = next-cross)
@@ -242,7 +243,7 @@ to go
       send-message "update" self
       ;ask next-cross [set pcolor black]
     ]
-    nextPatch
+    ;;if next = 0 or [pxcor] of patch-here >= [pxcor] of next or [pycor] of patch-here <= [pycor] of next or ([pxcor] of patch-here = max-pxcor and [pxcor] of next = min-pxcor) or ([pycor] of patch-here = min-pycor and [pycor] of next = max-pycor)
   ]
 
   ;ask cars[
@@ -393,6 +394,13 @@ to nextPatch
       [if pycor = [pycor] of next
         [change-direction]]
     ]
+    ifelse 18 = pxcor
+        [ifelse -18 = pycor
+          [if pxcor > [pxcor] of next or pycor < [pycor] of next [fd speed]]
+          [if pxcor > [pxcor] of next or pycor > [pycor] of next [fd speed]]]
+        [ifelse -18 = pycor
+          [if pxcor < [pxcor] of next or pycor < [pycor] of next [fd speed]]
+          [if pxcor < [pxcor] of next or pycor > [pycor] of next [fd speed]]]
     set path but-first path]
   [setPath]
 end
