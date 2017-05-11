@@ -440,7 +440,9 @@ end
 
 ;; decrease the speed of the turtle
 to slow-down  ;; turtle procedure
-  set speed speed / 2
+  ifelse speed > (speed-limit / 2)
+  [set speed speed ]
+  [set speed speed - 2 * acceleration]
   if speed <= 0  ;;if speed < 0
   [ set speed 0 ]
 end
