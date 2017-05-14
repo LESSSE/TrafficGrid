@@ -30,8 +30,10 @@ cars-own
   up-car?   ;; true if the turtle moves downwards and false if it moves to the right
   wait-time ;; the amount of time since the last time a turtle has moved
   objective ;;
+  objectives
   next-cross
   i-go-first
+  persistence
   conflicting-cars
   conflicting-car
   path
@@ -180,6 +182,7 @@ to setup-cars  ;; turtle procedure
   set id counter
   set counter (counter + 1)
   set conflicting-cars 0
+  set persistence 0
   set speed 0
   set wait-time 0
   set next 0
@@ -225,6 +228,8 @@ to go
   ;; record data for plotting, and set the color of the turtles to an appropriate color
   ;; based on their speed
   ask cars [
+    if not (color = yellow)
+        [set color blue]
     set-car-speed
     nextPatch
     record-data
@@ -235,6 +240,18 @@ to go
     set objective-counter objective-counter + 1
     show objective-counter
     setPath]
+
+    let struggle (count turtles in-radius 2) > 3 and not blind? and not provident? ;;in this case the agent must be in a struggle to try to replan
+    let time-to-replan   ticks mod 3 = id mod 3 and not blind? and provident?  ;;in this case the agent replan from time to time
+
+    if struggle or time-to-replan
+    [ ifelse persistence = 0
+      [ if not (color = yellow)
+        [set color red]
+        setPath
+        set persistence Perseverance]
+      [set persistence persistence - 1]
+    ]
 
     if not (intersection?) and not (get-next-crossing = next-cross)
     [;ask next-cross [set pcolor white]
@@ -260,12 +277,10 @@ to go
 
   ask cars [set-conflicting-car]
 
-
   ask cars [if not (intersection?)
     [set-passing-first-variable]]
 
   ask cars [adjust-velocity]
-
   ;; update the phase and the global clock
   next-phase
   tick
@@ -461,7 +476,7 @@ end
 
 ;; set the color of the turtle to a different color based on how fast the turtle is moving
 to set-car-color  ;; turtle procedure
-  if  not (color = yellow)
+  if  (not (color = yellow) and not (color = red))
   [ifelse speed < (speed-limit / 2)
     [ set color blue ]
     [ set color cyan - 2 ]
@@ -710,10 +725,14 @@ to-report is-conflicting-car [car-info]
   [report false]
 end
 
-
+to-report is-in-front-car [car-info]
+  ifelse id != [id] of car-info and ((not up-car? and ([pxcor] of next-cross > [pxcor] of car-info) and (pycor = [pycor] of car-info)) or (up-car? and (pxcor = [pxcor] of car-info) and ([pycor] of next-cross <  [pycor] of car-info)))
+  [report true]
+  [report false]
+end
 ; Things bellow are for A*
 
-; Patch report to estimate the total expected cost of the path starting from
+; Patch report to estimate the total expected cost of the path starting from1
 ; in Start, passing through it, and reaching the #Goal
 to-report Total-expected-cost [#Goal]
   report Cost-path + Heuristic #Goal
@@ -722,7 +741,10 @@ end
 ; Patch report to reurtn the heuristic (expected length) from the current patch
 ; to the #Goal
 to-report Heuristic [#Goal]
-  report distance #Goal
+  let val (distance #Goal)
+  if HeuristicOption = "NumberOfNearTurtles+Distance"
+  [set val val + ((count turtles in-radius 2))]
+  report val
 end
 
 ; A* algorithm. Inputs:
@@ -833,9 +855,6 @@ to-report A* [#Start #Goal #valid-map]
     report false
   ]
 end
-
-
-
 
 ; Copyright 2003 Uri Wilensky.
 ; See Info tab for full copyright and license.
@@ -953,7 +972,7 @@ num-cars
 num-cars
 1
 400
-100.0
+150.0
 1
 1
 NIL
@@ -1020,7 +1039,7 @@ speed-limit
 speed-limit
 0.1
 1
-1.0
+0.5
 0.1
 1
 NIL
@@ -1046,7 +1065,7 @@ ticks-per-cycle
 ticks-per-cycle
 1
 100
-1.0
+35.0
 1
 1
 NIL
@@ -1111,6 +1130,93 @@ NIL
 NIL
 NIL
 0
+
+MONITOR
+679
+12
+790
+57
+NIL
+objective-counter
+17
+1
+11
+
+PLOT
+677
+378
+908
+542
+Objectives per Car per cycles
+Time
+Objectives
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot objective-counter / (ticks + 0.001)"
+
+MONITOR
+793
+10
+1009
+55
+Objectives per Cycle per Car
+objective-counter * 100 / (ticks * count turtles)
+17
+1
+11
+
+CHOOSER
+680
+60
+906
+105
+HeuristicOption
+HeuristicOption
+"OnlyDistance" "NumberOfNearTurtles+Distance"
+0
+
+SLIDER
+680
+108
+907
+141
+Perseverance
+Perseverance
+0
+20
+10.0
+1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+908
+72
+1008
+105
+blind?
+blind?
+0
+1
+-1000
+
+SWITCH
+909
+108
+1009
+141
+provident?
+provident?
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1520,7 +1626,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0
+NetLogo 6.0.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
