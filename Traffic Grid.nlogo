@@ -241,10 +241,11 @@ to go
     show objective-counter
     setPath]
 
-    let struggle (count turtles in-radius 2) > 3 and not blind? and not provident? ;;in this case the agent must be in a struggle to try to replan
-    let time-to-replan   ticks mod 3 = id mod 3 and not blind? and provident?  ;;in this case the agent replan from time to time
+    ;;3 kinds of agents: blind agents plan before go, struggler agents replan when they have a lot of other cars around, while provident agents plan from time to time during its trip
+    let struggle (count turtles in-radius 2) > 3 and agent_commitment = "Struggler Agent" ;;in this case the agent must be in a struggle to try to replan
+    let time-to-replan ticks mod (perseverance + 1)  = id mod (perseverance + 1) and agent_commitment = "Provident Agent"  ;;in this case the agent replan from time to time
 
-    if struggle or time-to-replan
+    if struggle
     [ ifelse persistence = 0
       [ if not (color = yellow)
         [set color red]
@@ -252,6 +253,10 @@ to go
         set persistence Perseverance]
       [set persistence persistence - 1]
     ]
+    if time-to-replan
+    [if not (color = yellow)
+      [set color red]
+      setPath]
 
     if not (intersection?) and not (get-next-crossing = next-cross)
     [;ask next-cross [set pcolor white]
@@ -1039,7 +1044,7 @@ speed-limit
 speed-limit
 0.1
 1
-0.5
+1.0
 0.1
 1
 NIL
@@ -1147,25 +1152,25 @@ PLOT
 378
 908
 542
-Objectives per Car per cycles
+Objectives per tick per Car
 Time
 Objectives
 0.0
 10.0
-0.0
-1.0
+0.2
+0.7
 true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot objective-counter / (ticks + 0.001)"
+"default" 1.0 0 -16777216 true "" "plot objective-counter * 100 / (ticks * count turtles + 0.001)"
 
 MONITOR
 793
 10
 1009
 55
-Objectives per Cycle per Car
+Objectives per tick per Car
 objective-counter * 100 / (ticks * count turtles)
 17
 1
@@ -1179,44 +1184,32 @@ CHOOSER
 HeuristicOption
 HeuristicOption
 "OnlyDistance" "NumberOfNearTurtles+Distance"
-0
+1
 
 SLIDER
 680
-108
+155
 907
-141
+188
 Perseverance
 Perseverance
-0
-20
+1
+10
 10.0
 1
 1
 NIL
 HORIZONTAL
 
-SWITCH
-908
-72
-1008
-105
-blind?
-blind?
-0
-1
--1000
-
-SWITCH
-909
+CHOOSER
+680
 108
-1009
-141
-provident?
-provident?
-1
-1
--1000
+906
+153
+agent_commitment
+agent_commitment
+"Blind Agent" "Struggler Agent" "Provident Agent"
+2
 
 @#$#@#$#@
 ## WHAT IS IT?
